@@ -8,6 +8,11 @@ from datetime import datetime
 bp = Blueprint('cloans', __name__, url_prefix='/cloans')
 
 
+def parse_date(value, default=None):
+    # Acepta '2024-01-01' o '2024-01-01T10:30' (datetime-local); vacío -> default
+    return datetime.fromisoformat(value) if value else default
+
+
 @bp.route('/', methods=['GET'])
 def index():
     loans = ComputerLoan.query.all()
@@ -18,8 +23,8 @@ def add():
     if request.method == 'POST':
         computerId = request.form['computerId']
         userId = request.form['userId']
-        loanDate = request.form.get('loanDate', datetime.utcnow())
-        returnDate = request.form.get('returnDate')
+        loanDate = parse_date(request.form.get('loanDate'), datetime.utcnow())
+        returnDate = parse_date(request.form.get('returnDate'))
         status = request.form.get('status', 'Active')
         
         new_loan = ComputerLoan(
@@ -43,8 +48,8 @@ def edit(id):
     if request.method == 'POST':
         loan.computerId = request.form['computerId']
         loan.userId = request.form['userId']
-        loan.loanDate = request.form['loanDate']
-        loan.returnDate = request.form['returnDate']
+        loan.loanDate = parse_date(request.form['loanDate'], loan.loanDate)
+        loan.returnDate = parse_date(request.form['returnDate'])
         loan.status = request.form['status']
         db.session.commit()
         return redirect(url_for('cloans.index'))
